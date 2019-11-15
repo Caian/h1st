@@ -59,19 +59,19 @@ struct hist_node
     int uuid;
     const nodes_in_vector nodes_in;
     const files_out_vector files_out;
-    const std::string args;
+    const std::string command;
 
     template <typename ITO>
     hist_node(
         int uuid,
-        const std::string& args,
+        const std::string& command,
         ITO files_out_begin,
         ITO files_out_end
     ) :
         uuid(uuid),
         nodes_in(),
         files_out(files_out_begin, files_out_end),
-        args(args)
+        command(command)
     {
     }
 
@@ -80,14 +80,14 @@ struct hist_node
         int uuid,
         ITN nodes_in_begin,
         ITN nodes_in_end,
-        const std::string& args,
+        const std::string& command,
         ITO files_out_begin,
         ITO files_out_end
     ) :
         uuid(uuid),
         nodes_in(nodes_in_begin, nodes_in_end),
         files_out(files_out_begin, files_out_end),
-        args(args)
+        command(command)
     {
     }
 
@@ -103,7 +103,7 @@ struct hist_node
                 << input.node->uuid << ") ";
         }
 
-        std::cout << args << " ";
+        std::cout << command << " ";
 
         for (size_t i = 0; i < files_out.size(); i++)
         {
@@ -217,7 +217,7 @@ public:
     const hist_node* push_node(
         ITF files_in_begin,
         ITF files_in_end,
-        const std::string& args,
+        const std::string& command,
         ITO files_out_begin,
         ITO files_out_end
     )
@@ -239,19 +239,19 @@ public:
         }
 
         hist_node* node = new hist_node(_uuid, nodes_in.begin(),
-            nodes_in.end(), args, files_out_begin, files_out_end);
+            nodes_in.end(), command, files_out_begin, files_out_end);
 
         return add_node(node);
     }
 
     template <typename ITO>
     const hist_node* push_node(
-        const std::string& args,
+        const std::string& command,
         ITO files_out_begin,
         ITO files_out_end
     )
     {
-        hist_node* node = new hist_node(_uuid, args,
+        hist_node* node = new hist_node(_uuid, command,
             files_out_begin, files_out_end);
 
         return add_node(node);
@@ -302,7 +302,7 @@ public:
 void push_one(
     hist_graph& graph,
     const std::string& file_in,
-    const std::string& args,
+    const std::string& command,
     const std::string& file_out
 )
 {
@@ -312,20 +312,20 @@ void push_one(
     const std::string* files_out_begin = &file_out;
     const std::string* files_out_end = files_out_begin + 1;
 
-    graph.push_node(files_in_begin, files_in_end, args,
+    graph.push_node(files_in_begin, files_in_end, command,
         files_out_begin, files_out_end);
 }
 
 void push_one(
     hist_graph& graph,
-    const std::string& args,
+    const std::string& command,
     const std::string& file_out
 )
 {
     const std::string* files_out_begin = &file_out;
     const std::string* files_out_end = files_out_begin + 1;
 
-    graph.push_node(args, files_out_begin, files_out_end);
+    graph.push_node(command, files_out_begin, files_out_end);
 }
 
 void track_one(
@@ -356,16 +356,16 @@ int main(
 
     hist_graph graph;
 
-    push_one(graph,              "args 1" , "out.txt"  );
-    push_one(graph, "out.txt"  , "args 2" , "out.A.txt");
-    push_one(graph, "out.txt"  , "args 3" , "out.A.txt");
-    push_one(graph,              "args 4" , "out.txt"  );
-    push_one(graph, "out.txt"  , "args 5" , "out.A.txt");
-    push_one(graph, "out.A.txt", "args 6" , "out.B.txt");
-    push_one(graph, "out.B.txt", "args 7" , "out.C.txt");
-    push_one(graph, "out.txt"  , "args 8" , "out.A.txt");
-    push_one(graph, "out.txt"  , "args 9" , "out.A.txt");
-    push_one(graph, "out.A.txt", "args 10", "out.B.txt");
+    push_one(graph,              "command 1" , "out.txt"  );
+    push_one(graph, "out.txt"  , "command 2" , "out.A.txt");
+    push_one(graph, "out.txt"  , "command 3" , "out.A.txt");
+    push_one(graph,              "command 4" , "out.txt"  );
+    push_one(graph, "out.txt"  , "command 5" , "out.A.txt");
+    push_one(graph, "out.A.txt", "command 6" , "out.B.txt");
+    push_one(graph, "out.B.txt", "command 7" , "out.C.txt");
+    push_one(graph, "out.txt"  , "command 8" , "out.A.txt");
+    push_one(graph, "out.txt"  , "command 9" , "out.A.txt");
+    push_one(graph, "out.A.txt", "command 10", "out.B.txt");
     graph.print();
     std::cout << "-------- Tracking out.B.txt: --------" << std::endl;
     track_one(graph, "out.B.txt");
