@@ -19,6 +19,7 @@
  */
 
 #include <iostream>
+#include <utility>
 #include <string>
 #include <vector>
 #include <map>
@@ -89,11 +90,11 @@ private:
     }
 
     void prune_recurse(
-        std::vector<bool>& visited,
+        std::vector<int>& visited,
         const hist_node* node
     )
     {
-        visited[node->uuid] = true;
+        visited[node->uuid] = 1;
 
         if (node->node_in)
             prune_recurse(visited, node->node_in);
@@ -147,7 +148,7 @@ public:
     )
     {
         const size_t num_nodes = _nodes.size();
-        std::vector<bool> visited(num_nodes, false);
+        std::vector<int> visited(num_nodes, 0);
 
         for (input_map::const_iterator it = _inputs.begin(); it != _inputs.end(); it++)
             prune_recurse(visited, it->second);
@@ -156,9 +157,10 @@ public:
         size_t j = 0;
         for (size_t i = 0; i < num_nodes; i++)
         {
-            _nodes[j] = _nodes[i];
+            std::swap(_nodes[j], _nodes[i]);
+            std::swap(visited[j], visited[i]);
+
             _nodes[j]->uuid = _uuid;
-            visited[j] = visited[i];
 
             if (visited[j])
             {
@@ -166,6 +168,9 @@ public:
                 _uuid++;
             }
         }
+
+        for (size_t i = j; i < num_nodes; i++)
+            delete _nodes[i];
 
         _nodes.resize(j);
     }
