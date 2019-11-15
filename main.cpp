@@ -89,7 +89,7 @@ private:
         return node;
     }
 
-    void prune_recurse(
+    void visit(
         std::vector<int>& visited,
         const hist_node* node
     )
@@ -97,7 +97,7 @@ private:
         visited[node->uuid] = 1;
 
         if (node->node_in)
-            prune_recurse(visited, node->node_in);
+            visit(visited, node->node_in);
     }
 
 public:
@@ -151,7 +151,7 @@ public:
         std::vector<int> visited(num_nodes, 0);
 
         for (input_map::const_iterator it = _inputs.begin(); it != _inputs.end(); it++)
-            prune_recurse(visited, it->second);
+            visit(visited, it->second);
 
         _uuid = 0;
         size_t j = 0;
