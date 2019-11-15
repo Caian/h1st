@@ -25,40 +25,94 @@
 #include <vector>
 #include <map>
 
+struct node_input
+{
+    const struct hist_node* const node;
+    const std::string file;
+
+    node_input(
+        const hist_node* node,
+        const std::string& file
+    ) :
+        node(node),
+        file(file)
+    {
+        if (!node)
+        {
+            // TODO
+            throw 2;
+        }
+
+        if (file.size() == 0)
+        {
+            // TODO
+            throw 3;
+        }
+    }
+};
+
 struct hist_node
 {
-    int uuid;
-    const hist_node* node_in;
-    std::string file_out;
-    std::string args;
+    typedef std::vector<node_input> nodes_in_vector;
+    typedef std::vector<std::string> files_out_vector;
 
+    int uuid;
+    const nodes_in_vector nodes_in;
+    const files_out_vector files_out;
+    const std::string args;
+
+    template <typename ITO>
     hist_node(
         int uuid,
-        const hist_node* node_in,
-        std::string args,
-        std::string file_out
+        const std::string& args,
+        ITO files_out_begin,
+        ITO files_out_end
     ) :
         uuid(uuid),
-        node_in(node_in),
-        args(args),
-        file_out(file_out)
+        nodes_in(),
+        files_out(files_out_begin, files_out_end),
+        args(args)
+    {
+    }
+
+    template <typename ITN, typename ITO>
+    hist_node(
+        int uuid,
+        ITN nodes_in_begin,
+        ITN nodes_in_end,
+        const std::string& args,
+        ITO files_out_begin,
+        ITO files_out_end
+    ) :
+        uuid(uuid),
+        nodes_in(nodes_in_begin, nodes_in_end),
+        files_out(files_out_begin, files_out_end),
+        args(args)
     {
     }
 
     void print(
     ) const
     {
-        if (node_in)
+        for (size_t i = 0; i < nodes_in.size(); i++)
         {
+            const node_input& input = nodes_in[i];
+
             std::cout
-                << node_in->file_out << "("
-                << node_in->uuid << ") ";
+                << input.file << "("
+                << input.node->uuid << ") ";
         }
 
-        std::cout << args << " "
-            << file_out << "("
-            << uuid << ") "
-            << std::endl;
+        std::cout << args << " ";
+
+        for (size_t i = 0; i < files_out.size(); i++)
+        {
+            std::cout
+                << files_out[i] << "("
+                << uuid << ") ";
+        }
+
+        std::cout << std::endl;
     }
 
     virtual ~hist_node()
@@ -71,22 +125,21 @@ class hist_graph
 private:
 
     typedef std::vector<hist_node*> node_vector;
-    typedef std::map<std::string, hist_node*> input_map;
+    typedef std::map<std::string, hist_node*> file_map;
 
     int _uuid;
     node_vector _nodes;
-    input_map _inputs;
+    file_map _inputs;
 
     const hist_node* add_node(
-        const hist_node* node_in,
-        const std::string& args,
-        const std::string& file_out
+        hist_node* node
     )
     {
-        hist_node* node = new hist_node(_uuid, node_in, args, file_out);
         _nodes.push_back(node);
         _uuid++;
-        _inputs[file_out] = node;
+
+        for (size_t i = 0; i < node->files_out.size(); i++)
+            _inputs[node->files_out[i]] = node;
 
         prune();
 
@@ -100,8 +153,8 @@ private:
     {
         visited[node->uuid] = 1;
 
-        if (node->node_in)
-            visit(visited, node->node_in);
+        for (size_t i = 0; i < node->nodes_in.size(); i++)
+            visit(visited, node->nodes_in[i].node);
     }
 
     void prune(
@@ -110,7 +163,7 @@ private:
         const size_t num_nodes = _nodes.size();
         std::vector<int> visited(num_nodes, 0);
 
-        for (input_map::const_iterator it = _inputs.begin(); it != _inputs.end(); it++)
+        for (file_map::const_iterator it = _inputs.begin(); it != _inputs.end(); it++)
             visit(visited, it->second);
 
         _uuid = 0;
@@ -139,7 +192,7 @@ private:
         const std::string& file
     ) const
     {
-        input_map::const_iterator it = _inputs.find(file);
+        file_map::const_iterator it = _inputs.find(file);
 
         if (it == _inputs.end())
         {
@@ -160,22 +213,48 @@ public:
     {
     }
 
+    template <typename ITF, typename ITO>
     const hist_node* push_node(
-        const std::string& file_in,
+        ITF files_in_begin,
+        ITF files_in_end,
         const std::string& args,
-        const std::string& file_out
+        ITO files_out_begin,
+        ITO files_out_end
     )
     {
-        const hist_node* node_in = get_hist_node(file_in);
-        return add_node(node_in, args, file_out);
+        std::vector<node_input> nodes_in;
+
+        for (ITF file = files_in_begin; file != files_in_end; file++)
+        {
+            file_map::const_iterator it = _inputs.find(*file);
+
+            if (it == _inputs.end())
+            {
+                // TODO
+                throw 0;
+            }
+
+            node_input node_in(it->second, it->first);
+            nodes_in.push_back(node_in);
+        }
+
+        hist_node* node = new hist_node(_uuid, nodes_in.begin(),
+            nodes_in.end(), args, files_out_begin, files_out_end);
+
+        return add_node(node);
     }
 
+    template <typename ITO>
     const hist_node* push_node(
         const std::string& args,
-        const std::string& file_out
+        ITO files_out_begin,
+        ITO files_out_end
     )
     {
-        return add_node(0, args, file_out);
+        hist_node* node = new hist_node(_uuid, args,
+            files_out_begin, files_out_end);
+
+        return add_node(node);
     }
 
     void print(
@@ -220,6 +299,35 @@ public:
     }
 };
 
+void push_one(
+    hist_graph& graph,
+    const std::string& file_in,
+    const std::string& args,
+    const std::string& file_out
+)
+{
+    const std::string* files_in_begin = &file_in;
+    const std::string* files_in_end = files_in_begin + 1;
+
+    const std::string* files_out_begin = &file_out;
+    const std::string* files_out_end = files_out_begin + 1;
+
+    graph.push_node(files_in_begin, files_in_end, args,
+        files_out_begin, files_out_end);
+}
+
+void push_one(
+    hist_graph& graph,
+    const std::string& args,
+    const std::string& file_out
+)
+{
+    const std::string* files_out_begin = &file_out;
+    const std::string* files_out_end = files_out_begin + 1;
+
+    graph.push_node(args, files_out_begin, files_out_end);
+}
+
 void track_one(
     const hist_graph& graph,
     const std::string& file
@@ -247,16 +355,17 @@ int main(
     std::cout << "Hello, world!" << std::endl;
 
     hist_graph graph;
-    graph.push_node(             "args 1" , "out.txt"  );
-    graph.push_node("out.txt"  , "args 2" , "out.A.txt");
-    graph.push_node("out.txt"  , "args 3" , "out.A.txt");
-    graph.push_node(             "args 4" , "out.txt"  );
-    graph.push_node("out.txt"  , "args 5" , "out.A.txt");
-    graph.push_node("out.A.txt", "args 6" , "out.B.txt");
-    graph.push_node("out.B.txt", "args 7" , "out.C.txt");
-    graph.push_node("out.txt"  , "args 8" , "out.A.txt");
-    graph.push_node("out.txt"  , "args 9" , "out.A.txt");
-    graph.push_node("out.A.txt", "args 10", "out.B.txt");
+
+    push_one(graph,              "args 1" , "out.txt"  );
+    push_one(graph, "out.txt"  , "args 2" , "out.A.txt");
+    push_one(graph, "out.txt"  , "args 3" , "out.A.txt");
+    push_one(graph,              "args 4" , "out.txt"  );
+    push_one(graph, "out.txt"  , "args 5" , "out.A.txt");
+    push_one(graph, "out.A.txt", "args 6" , "out.B.txt");
+    push_one(graph, "out.B.txt", "args 7" , "out.C.txt");
+    push_one(graph, "out.txt"  , "args 8" , "out.A.txt");
+    push_one(graph, "out.txt"  , "args 9" , "out.A.txt");
+    push_one(graph, "out.A.txt", "args 10", "out.B.txt");
     graph.print();
     std::cout << "-------- Tracking out.B.txt: --------" << std::endl;
     track_one(graph, "out.B.txt");
