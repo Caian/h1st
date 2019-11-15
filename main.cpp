@@ -86,6 +86,9 @@ private:
         _nodes.push_back(node);
         _uuid++;
         _inputs[file_out] = node;
+
+        prune();
+
         return node;
     }
 
@@ -98,6 +101,37 @@ private:
 
         if (node->node_in)
             visit(visited, node->node_in);
+    }
+
+    void prune(
+    )
+    {
+        const size_t num_nodes = _nodes.size();
+        std::vector<int> visited(num_nodes, 0);
+
+        for (input_map::const_iterator it = _inputs.begin(); it != _inputs.end(); it++)
+            visit(visited, it->second);
+
+        _uuid = 0;
+        size_t j = 0;
+        for (size_t i = 0; i < num_nodes; i++)
+        {
+            std::swap(_nodes[j], _nodes[i]);
+            std::swap(visited[j], visited[i]);
+
+            _nodes[j]->uuid = _uuid;
+
+            if (visited[j])
+            {
+                j++;
+                _uuid++;
+            }
+        }
+
+        for (size_t i = j; i < num_nodes; i++)
+            delete _nodes[i];
+
+        _nodes.resize(j);
     }
 
 public:
@@ -143,38 +177,6 @@ public:
             _nodes[i]->print();
     }
 
-    // TODO move to add_node
-    void prune(
-    )
-    {
-        const size_t num_nodes = _nodes.size();
-        std::vector<int> visited(num_nodes, 0);
-
-        for (input_map::const_iterator it = _inputs.begin(); it != _inputs.end(); it++)
-            visit(visited, it->second);
-
-        _uuid = 0;
-        size_t j = 0;
-        for (size_t i = 0; i < num_nodes; i++)
-        {
-            std::swap(_nodes[j], _nodes[i]);
-            std::swap(visited[j], visited[i]);
-
-            _nodes[j]->uuid = _uuid;
-
-            if (visited[j])
-            {
-                j++;
-                _uuid++;
-            }
-        }
-
-        for (size_t i = j; i < num_nodes; i++)
-            delete _nodes[i];
-
-        _nodes.resize(j);
-    }
-
     virtual ~hist_graph(
     )
     {
@@ -201,10 +203,6 @@ int main(
     graph.push_node("out.txt"  , "args 8" , "out.A.txt");
     graph.push_node("out.txt"  , "args 9" , "out.A.txt");
     graph.push_node("out.A.txt", "args 10", "out.B.txt");
-    std::cout << "-------- Before prunning: --------" << std::endl;
-    graph.print();
-    std::cout << "-------- After prunning: --------" << std::endl;
-    graph.prune();
     graph.print();
     return 0;
 }
