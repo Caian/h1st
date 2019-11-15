@@ -134,6 +134,21 @@ private:
         _nodes.resize(j);
     }
 
+    const hist_node* get_hist_node(
+        const std::string& file
+    ) const
+    {
+        input_map::const_iterator it = _inputs.find(file);
+
+        if (it == _inputs.end())
+        {
+            // TODO
+            throw 0;
+        }
+
+        return it->second;
+    }
+
 public:
 
     hist_graph(
@@ -150,15 +165,7 @@ public:
         const std::string& file_out
     )
     {
-        input_map::const_iterator it = _inputs.find(file_in);
-
-        if (it == _inputs.end())
-        {
-            // TODO
-            throw 0;
-        }
-
-        const hist_node* node_in = it->second;
+        const hist_node* node_in = get_hist_node(file_in);
         return add_node(node_in, args, file_out);
     }
 
