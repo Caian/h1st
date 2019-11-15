@@ -19,6 +19,7 @@
  */
 
 #include <iostream>
+#include <iterator>
 #include <utility>
 #include <string>
 #include <vector>
@@ -184,6 +185,33 @@ public:
             _nodes[i]->print();
     }
 
+    template <typename ITF, typename ITN>
+    void track(
+        ITF files_begin,
+        ITF files_end,
+        ITN nodes_out
+    ) const
+    {
+        const size_t num_nodes = _nodes.size();
+        std::vector<int> visited(num_nodes, 0);
+
+        for (ITF file = files_begin; file != files_end; file++)
+        {
+            const hist_node* node_in = get_hist_node(*file);
+            visit(visited, node_in);
+        }
+
+        for(size_t i = 0; i < num_nodes; i++)
+        {
+            if (visited[i])
+            {
+                const hist_node* node = _nodes[i];
+                *nodes_out = node;
+                nodes_out++;
+            }
+        }
+    }
+
     virtual ~hist_graph(
     )
     {
@@ -191,6 +219,25 @@ public:
             delete _nodes[i];
     }
 };
+
+void track_one(
+    const hist_graph& graph,
+    const std::string& file
+)
+{
+    const std::string* files_in_begin = &file;
+    const std::string* files_in_end = files_in_begin + 1;
+
+    std::vector<const hist_node*> nodes;
+
+    graph.track(files_in_begin, files_in_end,
+        std::back_inserter(nodes));
+
+    for (size_t i = 0; i < nodes.size(); i++)
+    {
+        nodes[i]->print();
+    }
+}
 
 int main(
     int argc,
@@ -211,5 +258,7 @@ int main(
     graph.push_node("out.txt"  , "args 9" , "out.A.txt");
     graph.push_node("out.A.txt", "args 10", "out.B.txt");
     graph.print();
+    std::cout << "-------- Tracking out.B.txt: --------" << std::endl;
+    track_one(graph, "out.B.txt");
     return 0;
 }
