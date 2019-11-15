@@ -95,7 +95,7 @@ private:
     void visit(
         std::vector<int>& visited,
         const hist_node* node
-    )
+    ) const
     {
         visited[node->uuid] = 1;
 
