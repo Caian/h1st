@@ -299,54 +299,6 @@ public:
     }
 };
 
-void push_one(
-    hist_graph& graph,
-    const std::string& file_in,
-    const std::string& command,
-    const std::string& file_out
-)
-{
-    const std::string* files_in_begin = &file_in;
-    const std::string* files_in_end = files_in_begin + 1;
-
-    const std::string* files_out_begin = &file_out;
-    const std::string* files_out_end = files_out_begin + 1;
-
-    graph.push_node(files_in_begin, files_in_end, command,
-        files_out_begin, files_out_end);
-}
-
-void push_one(
-    hist_graph& graph,
-    const std::string& command,
-    const std::string& file_out
-)
-{
-    const std::string* files_out_begin = &file_out;
-    const std::string* files_out_end = files_out_begin + 1;
-
-    graph.push_node(command, files_out_begin, files_out_end);
-}
-
-void track_one(
-    const hist_graph& graph,
-    const std::string& file
-)
-{
-    const std::string* files_in_begin = &file;
-    const std::string* files_in_end = files_in_begin + 1;
-
-    std::vector<const hist_node*> nodes;
-
-    graph.track(files_in_begin, files_in_end,
-        std::back_inserter(nodes));
-
-    for (size_t i = 0; i < nodes.size(); i++)
-    {
-        nodes[i]->print();
-    }
-}
-
 int main(
     int argc,
     const char* argv[]
@@ -356,18 +308,120 @@ int main(
 
     hist_graph graph;
 
-    push_one(graph,              "command 1" , "out.txt"  );
-    push_one(graph, "out.txt"  , "command 2" , "out.A.txt");
-    push_one(graph, "out.txt"  , "command 3" , "out.A.txt");
-    push_one(graph,              "command 4" , "out.txt"  );
-    push_one(graph, "out.txt"  , "command 5" , "out.A.txt");
-    push_one(graph, "out.A.txt", "command 6" , "out.B.txt");
-    push_one(graph, "out.B.txt", "command 7" , "out.C.txt");
-    push_one(graph, "out.txt"  , "command 8" , "out.A.txt");
-    push_one(graph, "out.txt"  , "command 9" , "out.A.txt");
-    push_one(graph, "out.A.txt", "command 10", "out.B.txt");
+    {
+        std::vector<std::string> files_out;
+        files_out.push_back("out.txt");
+
+        graph.push_node(
+            "command 1", files_out.begin(), files_out.end());
+    }
+    {
+        std::vector<std::string> files_in;
+        files_in.push_back("out.txt");
+
+        std::vector<std::string> files_out;
+        files_out.push_back("out.A.txt");
+
+        graph.push_node(files_in.begin(), files_in.end(),
+            "command 2", files_out.begin(), files_out.end());
+    }
+    {
+        std::vector<std::string> files_in;
+        files_in.push_back("out.txt");
+
+        std::vector<std::string> files_out;
+        files_out.push_back("out.A.txt");
+
+        graph.push_node(files_in.begin(), files_in.end(),
+            "command 3", files_out.begin(), files_out.end());
+    }
+    {
+        std::vector<std::string> files_out;
+        files_out.push_back("out.txt");
+
+        graph.push_node(
+            "command 4", files_out.begin(), files_out.end());
+    }
+    {
+        std::vector<std::string> files_in;
+        files_in.push_back("out.txt");
+
+        std::vector<std::string> files_out;
+        files_out.push_back("out.A.txt");
+
+        graph.push_node(files_in.begin(), files_in.end(),
+            "command 5", files_out.begin(), files_out.end());
+    }
+    {
+        std::vector<std::string> files_in;
+        files_in.push_back("out.A.txt");
+
+        std::vector<std::string> files_out;
+        files_out.push_back("out.B.txt");
+
+        graph.push_node(files_in.begin(), files_in.end(),
+            "command 6", files_out.begin(), files_out.end());
+    }
+    {
+        std::vector<std::string> files_in;
+        files_in.push_back("out.B.txt");
+
+        std::vector<std::string> files_out;
+        files_out.push_back("out.C.txt");
+
+        graph.push_node(files_in.begin(), files_in.end(),
+            "command 7", files_out.begin(), files_out.end());
+    }
+    {
+        std::vector<std::string> files_in;
+        files_in.push_back("out.txt");
+
+        std::vector<std::string> files_out;
+        files_out.push_back("out.A.txt");
+
+        graph.push_node(files_in.begin(), files_in.end(),
+            "command 8", files_out.begin(), files_out.end());
+    }
+    {
+        std::vector<std::string> files_in;
+        files_in.push_back("out.txt");
+
+        std::vector<std::string> files_out;
+        files_out.push_back("out.A.txt");
+
+        graph.push_node(files_in.begin(), files_in.end(),
+            "command 9", files_out.begin(), files_out.end());
+    }
+    {
+        std::vector<std::string> files_in;
+        files_in.push_back("out.A.txt");
+
+        std::vector<std::string> files_out;
+        files_out.push_back("out.B.txt");
+
+        graph.push_node(files_in.begin(), files_in.end(),
+            "command 10", files_out.begin(), files_out.end());
+    }
+
     graph.print();
+
     std::cout << "-------- Tracking out.B.txt: --------" << std::endl;
-    track_one(graph, "out.B.txt");
+
+    {
+        const std::string file = "out.B.txt";
+        const std::string* files_in_begin = &file;
+        const std::string* files_in_end = files_in_begin + 1;
+
+        std::vector<const hist_node*> nodes;
+
+        graph.track(files_in_begin, files_in_end,
+            std::back_inserter(nodes));
+
+        for (size_t i = 0; i < nodes.size(); i++)
+        {
+            nodes[i]->print();
+        }
+    }
+
     return 0;
 }
