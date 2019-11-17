@@ -18,15 +18,12 @@
  * the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#pragma once
-
+#include <iostream>
+#include <iterator>
 #include <utility>
-#include <ostream>
 #include <string>
 #include <vector>
 #include <map>
-
-namespace historian {
 
 struct node_input
 {
@@ -92,6 +89,30 @@ struct hist_node
         files_out(files_out_begin, files_out_end),
         command(command)
     {
+    }
+
+    void print(
+    ) const
+    {
+        for (size_t i = 0; i < nodes_in.size(); i++)
+        {
+            const node_input& input = nodes_in[i];
+
+            std::cout
+                << input.file << "("
+                << input.node->uuid << ") ";
+        }
+
+        std::cout << command << " ";
+
+        for (size_t i = 0; i < files_out.size(); i++)
+        {
+            std::cout
+                << files_out[i] << "("
+                << uuid << ") ";
+        }
+
+        std::cout << std::endl;
     }
 
     virtual ~hist_node()
@@ -236,13 +257,11 @@ public:
         return add_node(node);
     }
 
-    template <typename Printer>
     void print(
-        Printer& printer
     ) const
     {
         for (size_t i = 0; i < _nodes.size(); i++)
-            printer(_nodes[i]);
+            _nodes[i]->print();
     }
 
     template <typename ITF, typename ITN>
@@ -280,50 +299,129 @@ public:
     }
 };
 
-class hist_node_print_to_stream
+int main(
+    int argc,
+    const char* argv[]
+)
 {
-private:
+    std::cout << "Hello, world!" << std::endl;
 
-    std::ostream* _p_stream;
+    hist_graph graph;
 
-public:
-
-    hist_node_print_to_stream(
-        std::ostream* p_stream
-    ) :
-        _p_stream(p_stream)
     {
-        if (_p_stream == NULL)
+        std::vector<std::string> files_out;
+        files_out.push_back("out.txt");
+
+        graph.push_node(
+            "command 1", files_out.begin(), files_out.end());
+    }
+    {
+        std::vector<std::string> files_in;
+        files_in.push_back("out.txt");
+
+        std::vector<std::string> files_out;
+        files_out.push_back("out.A.txt");
+
+        graph.push_node(files_in.begin(), files_in.end(),
+            "command 2", files_out.begin(), files_out.end());
+    }
+    {
+        std::vector<std::string> files_in;
+        files_in.push_back("out.txt");
+
+        std::vector<std::string> files_out;
+        files_out.push_back("out.A.txt");
+
+        graph.push_node(files_in.begin(), files_in.end(),
+            "command 3", files_out.begin(), files_out.end());
+    }
+    {
+        std::vector<std::string> files_out;
+        files_out.push_back("out.txt");
+
+        graph.push_node(
+            "command 4", files_out.begin(), files_out.end());
+    }
+    {
+        std::vector<std::string> files_in;
+        files_in.push_back("out.txt");
+
+        std::vector<std::string> files_out;
+        files_out.push_back("out.A.txt");
+
+        graph.push_node(files_in.begin(), files_in.end(),
+            "command 5", files_out.begin(), files_out.end());
+    }
+    {
+        std::vector<std::string> files_in;
+        files_in.push_back("out.A.txt");
+
+        std::vector<std::string> files_out;
+        files_out.push_back("out.B.txt");
+
+        graph.push_node(files_in.begin(), files_in.end(),
+            "command 6", files_out.begin(), files_out.end());
+    }
+    {
+        std::vector<std::string> files_in;
+        files_in.push_back("out.B.txt");
+
+        std::vector<std::string> files_out;
+        files_out.push_back("out.C.txt");
+
+        graph.push_node(files_in.begin(), files_in.end(),
+            "command 7", files_out.begin(), files_out.end());
+    }
+    {
+        std::vector<std::string> files_in;
+        files_in.push_back("out.txt");
+
+        std::vector<std::string> files_out;
+        files_out.push_back("out.A.txt");
+
+        graph.push_node(files_in.begin(), files_in.end(),
+            "command 8", files_out.begin(), files_out.end());
+    }
+    {
+        std::vector<std::string> files_in;
+        files_in.push_back("out.txt");
+
+        std::vector<std::string> files_out;
+        files_out.push_back("out.A.txt");
+
+        graph.push_node(files_in.begin(), files_in.end(),
+            "command 9", files_out.begin(), files_out.end());
+    }
+    {
+        std::vector<std::string> files_in;
+        files_in.push_back("out.A.txt");
+
+        std::vector<std::string> files_out;
+        files_out.push_back("out.B.txt");
+
+        graph.push_node(files_in.begin(), files_in.end(),
+            "command 10", files_out.begin(), files_out.end());
+    }
+
+    graph.print();
+
+    std::cout << "-------- Tracking out.B.txt: --------" << std::endl;
+
+    {
+        const std::string file = "out.B.txt";
+        const std::string* files_in_begin = &file;
+        const std::string* files_in_end = files_in_begin + 1;
+
+        std::vector<const hist_node*> nodes;
+
+        graph.track(files_in_begin, files_in_end,
+            std::back_inserter(nodes));
+
+        for (size_t i = 0; i < nodes.size(); i++)
         {
-            // TODO
-            throw 5;
+            nodes[i]->print();
         }
     }
 
-    void operator ()(
-        const hist_node* node
-    )
-    {
-        for (size_t i = 0; i < node->nodes_in.size(); i++)
-        {
-            const node_input& input = node->nodes_in[i];
-
-            (*_p_stream)
-                << input.file << "("
-                << input.node->uuid << ") ";
-        }
-
-        (*_p_stream) << node->command << " ";
-
-        for (size_t i = 0; i < node->files_out.size(); i++)
-        {
-            (*_p_stream)
-                << node->files_out[i] << "("
-                << node->uuid << ") ";
-        }
-
-        (*_p_stream) << std::endl;
-    }
-};
-
+    return 0;
 }
