@@ -26,7 +26,7 @@
 #include <vector>
 #include <map>
 
-namespace historian {
+namespace h1st {
 
 class node_input
 {

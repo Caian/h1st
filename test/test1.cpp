@@ -34,7 +34,7 @@
  */
 TEST(TestHistorian, SingleInOut)
 {
-    using namespace historian;
+    using namespace h1st;
 
     std::stringstream ss;
 
