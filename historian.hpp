@@ -28,41 +28,63 @@
 
 namespace historian {
 
-struct node_input
+class node_input
 {
-    const struct hist_node* const node;
-    const std::string file;
+private:
+
+    const struct hist_node* _node;
+    std::string _file;
+
+public:
 
     node_input(
         const hist_node* node,
         const std::string& file
     ) :
-        node(node),
-        file(file)
+        _node(node),
+        _file(file)
     {
-        if (!node)
+        if (!_node)
         {
             // TODO
             throw 2;
         }
 
-        if (file.size() == 0)
+        if (_file.size() == 0)
         {
             // TODO
             throw 3;
         }
     }
+
+    const struct hist_node* node(
+    ) const
+    {
+        return _node;
+    }
+
+    const std::string& file(
+    ) const
+    {
+        return _file;
+    }
 };
 
-struct hist_node
+class hist_node
 {
+public:
+
     typedef std::vector<node_input> nodes_in_vector;
     typedef std::vector<std::string> files_out_vector;
 
-    int uuid;
-    const nodes_in_vector nodes_in;
-    const files_out_vector files_out;
-    const std::string command;
+private:
+
+    int _uuid;
+    nodes_in_vector _nodes_in;
+    files_out_vector _files_out;
+    std::string _command;
+
+public:
 
     template <typename ITO>
     hist_node(
@@ -71,10 +93,10 @@ struct hist_node
         ITO files_out_begin,
         ITO files_out_end
     ) :
-        uuid(uuid),
-        nodes_in(),
-        files_out(files_out_begin, files_out_end),
-        command(command)
+        _uuid(uuid),
+        _nodes_in(),
+        _files_out(files_out_begin, files_out_end),
+        _command(command)
     {
     }
 
@@ -87,11 +109,41 @@ struct hist_node
         ITO files_out_begin,
         ITO files_out_end
     ) :
-        uuid(uuid),
-        nodes_in(nodes_in_begin, nodes_in_end),
-        files_out(files_out_begin, files_out_end),
-        command(command)
+        _uuid(uuid),
+        _nodes_in(nodes_in_begin, nodes_in_end),
+        _files_out(files_out_begin, files_out_end),
+        _command(command)
     {
+    }
+
+    const int& uuid(
+    ) const
+    {
+        return _uuid;
+    }
+
+    int& uuid(
+    )
+    {
+        return _uuid;
+    }
+
+    const nodes_in_vector& nodes_in(
+    ) const
+    {
+        return _nodes_in;
+    }
+
+    const files_out_vector& files_out(
+    ) const
+    {
+        return _files_out;
+    }
+
+    const std::string& command(
+    ) const
+    {
+        return _command;
     }
 
     virtual ~hist_node()
@@ -117,8 +169,8 @@ private:
         _nodes.push_back(node);
         _uuid++;
 
-        for (size_t i = 0; i < node->files_out.size(); i++)
-            _inputs[node->files_out[i]] = node;
+        for (size_t i = 0; i < node->files_out().size(); i++)
+            _inputs[node->files_out()[i]] = node;
 
         prune();
 
@@ -130,10 +182,10 @@ private:
         const hist_node* node
     ) const
     {
-        visited[node->uuid] = 1;
+        visited[node->uuid()] = 1;
 
-        for (size_t i = 0; i < node->nodes_in.size(); i++)
-            visit(visited, node->nodes_in[i].node);
+        for (size_t i = 0; i < node->nodes_in().size(); i++)
+            visit(visited, node->nodes_in()[i].node());
     }
 
     void prune(
@@ -152,7 +204,7 @@ private:
             std::swap(_nodes[j], _nodes[i]);
             std::swap(visited[j], visited[i]);
 
-            _nodes[j]->uuid = _uuid;
+            _nodes[j]->uuid() = _uuid;
 
             if (visited[j])
             {
@@ -304,22 +356,22 @@ public:
         const hist_node* node
     )
     {
-        for (size_t i = 0; i < node->nodes_in.size(); i++)
+        for (size_t i = 0; i < node->nodes_in().size(); i++)
         {
-            const node_input& input = node->nodes_in[i];
+            const node_input& input = node->nodes_in()[i];
 
             (*_p_stream)
-                << input.file << "("
-                << input.node->uuid << ") ";
+                << input.file() << "("
+                << input.node()->uuid() << ") ";
         }
 
-        (*_p_stream) << node->command << " ";
+        (*_p_stream) << node->command() << " ";
 
-        for (size_t i = 0; i < node->files_out.size(); i++)
+        for (size_t i = 0; i < node->files_out().size(); i++)
         {
             (*_p_stream)
-                << node->files_out[i] << "("
-                << node->uuid << ") ";
+                << node->files_out()[i] << "("
+                << node->uuid() << ") ";
         }
 
         (*_p_stream) << std::endl;
