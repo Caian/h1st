@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include "exceptions.hpp"
+
 #include <utility>
 #include <ostream>
 #include <string>
@@ -46,14 +48,13 @@ public:
     {
         if (!_node)
         {
-            // TODO
-            throw 2;
+            EX3_THROW(null_value_exception()
+                << argument_name("node"));
         }
 
         if (_file.size() == 0)
         {
-            // TODO
-            throw 3;
+            EX3_THROW(empty_input_list_exception());
         }
     }
 
@@ -227,8 +228,8 @@ private:
 
         if (it == _inputs.end())
         {
-            // TODO
-            throw 0;
+            EX3_THROW(input_not_found_exception()
+                << input_value(file));
         }
 
         return it->second;
@@ -255,14 +256,16 @@ public:
     {
         std::vector<node_input> nodes_in;
 
-        for (ITF file = files_in_begin; file != files_in_end; file++)
+        for (ITF file_it = files_in_begin; file_it != files_in_end; file_it++)
         {
-            file_map::const_iterator it = _inputs.find(*file);
+            const std::string& file = *file_it;
+
+            file_map::const_iterator it = _inputs.find(file);
 
             if (it == _inputs.end())
             {
-                // TODO
-                throw 0;
+                EX3_THROW(input_not_found_exception()
+                    << input_value(file));
             }
 
             node_input node_in(it->second, it->first);
@@ -347,8 +350,8 @@ public:
     {
         if (_p_stream == NULL)
         {
-            // TODO
-            throw 5;
+            EX3_THROW(null_value_exception()
+                << argument_name("p_stream"));
         }
     }
 
