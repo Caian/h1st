@@ -319,4 +319,14 @@ TEST(TestInvalidGraph, MissingInput)
         h1st::input_not_found_exception);
 }
 
+/**
+ *
+ */
+TEST(TestInvalidPrinter, NullStream)
+{
+    ASSERT_THROW(h1st::hist_node_print_to_stream printer(0),
+        h1st::null_value_exception);
+}
+
+
 }
