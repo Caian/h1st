@@ -47,8 +47,9 @@ class h1st_exception :
 H1ST_MAKE_EINFO(argument_name, std::string)
 H1ST_MAKE_EINFO(input_value  , std::string)
 
-H1ST_MAKE_EXCEPTION(null_value_exception      )
-H1ST_MAKE_EXCEPTION(empty_input_list_exception)
-H1ST_MAKE_EXCEPTION(input_not_found_exception )
+H1ST_MAKE_EXCEPTION(null_value_exception       )
+H1ST_MAKE_EXCEPTION(empty_input_value_exception)
+H1ST_MAKE_EXCEPTION(empty_output_exception     )
+H1ST_MAKE_EXCEPTION(input_not_found_exception  )
 
 }
