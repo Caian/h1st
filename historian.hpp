@@ -20,13 +20,15 @@
 
 #pragma once
 
+#include "exceptions.hpp"
+
 #include <utility>
 #include <ostream>
 #include <string>
 #include <vector>
 #include <map>
 
-namespace historian {
+namespace h1st {
 
 class node_input
 {
@@ -44,16 +46,16 @@ public:
         _node(node),
         _file(file)
     {
-        if (!_node)
+        if (_node == 0)
         {
-            // TODO
-            throw 2;
+            EX3_THROW(null_value_exception()
+                << argument_name("node"));
         }
 
         if (_file.size() == 0)
         {
-            // TODO
-            throw 3;
+            EX3_THROW(empty_input_value_exception()
+                << argument_name("file"));
         }
     }
 
@@ -166,6 +168,11 @@ private:
         hist_node* node
     )
     {
+        if (node->files_out().size() == 0)
+        {
+            EX3_THROW(empty_output_exception());
+        }
+
         _nodes.push_back(node);
         _uuid++;
 
@@ -219,17 +226,14 @@ private:
         _nodes.resize(j);
     }
 
-    const hist_node* get_hist_node(
+    const hist_node* try_get_hist_node(
         const std::string& file
     ) const
     {
         file_map::const_iterator it = _inputs.find(file);
 
         if (it == _inputs.end())
-        {
-            // TODO
-            throw 0;
-        }
+            return 0;
 
         return it->second;
     }
@@ -255,14 +259,16 @@ public:
     {
         std::vector<node_input> nodes_in;
 
-        for (ITF file = files_in_begin; file != files_in_end; file++)
+        for (ITF file_it = files_in_begin; file_it != files_in_end; file_it++)
         {
-            file_map::const_iterator it = _inputs.find(*file);
+            const std::string& file = *file_it;
+
+            file_map::const_iterator it = _inputs.find(file);
 
             if (it == _inputs.end())
             {
-                // TODO
-                throw 0;
+                EX3_THROW(input_not_found_exception()
+                    << input_value(file));
             }
 
             node_input node_in(it->second, it->first);
@@ -298,18 +304,33 @@ public:
     }
 
     template <typename ITF, typename ITN>
-    void track(
+    bool track(
         ITF files_begin,
         ITF files_end,
-        ITN nodes_out
+        ITN nodes_out,
+        bool ignore_missing
     ) const
     {
+        bool found_all = true;
+
         const size_t num_nodes = _nodes.size();
         std::vector<int> visited(num_nodes, 0);
 
-        for (ITF file = files_begin; file != files_end; file++)
+        for (ITF file_it = files_begin; file_it != files_end; file_it++)
         {
-            const hist_node* node_in = get_hist_node(*file);
+            const std::string& file = *file_it;
+
+            const hist_node* node_in = try_get_hist_node(file);
+
+            if (node_in == 0)
+            {
+                if (ignore_missing)
+                    continue;
+
+                EX3_THROW(input_not_found_exception()
+                    << input_value(file));
+            }
+
             visit(visited, node_in);
         }
 
@@ -322,6 +343,13 @@ public:
                 nodes_out++;
             }
         }
+    }
+
+    bool has_input(
+        const std::string& file
+    ) const
+    {
+        return try_get_hist_node(file) != 0;
     }
 
     virtual ~hist_graph(
@@ -345,10 +373,10 @@ public:
     ) :
         _p_stream(p_stream)
     {
-        if (_p_stream == NULL)
+        if (_p_stream == 0)
         {
-            // TODO
-            throw 5;
+            EX3_THROW(null_value_exception()
+                << argument_name("p_stream"));
         }
     }
 
