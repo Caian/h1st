@@ -69,5 +69,73 @@ TEST(TestInvalidPrinter, NullStream)
         h1st::null_value_exception);
 }
 
+/**
+ *
+ */
+TEST(TestInvalidNodeInput, NullHist)
+{
+    try
+    {
+        h1st::node_input ni(0, "test");
+
+        FAIL() << "node_input constructor did not throw any exception!";
+    }
+    catch (
+        const h1st::null_value_exception& ex
+    )
+    {
+        const std::string* aname;
+        aname = boost::get_error_info<h1st::argument_name>(ex);
+
+        ASSERT_NE((void*)0, aname);
+        ASSERT_STREQ("node", aname->c_str());
+    }
+    catch (...)
+    {
+        FAIL() << "Unexpected exception thrown by node_input constructor!";
+    }
+}
+
+/**
+ *
+ */
+TEST(TestInvalidNodeInput, EmptyInput)
+{
+    const std::string file = "out.txt";
+    const std::string* files_out_begin = &file;
+    const std::string* files_out_end = files_out_begin + 1;
+
+    try
+    {
+        h1st::hist_node node(0, "", files_out_begin, files_out_end);
+
+        try
+        {
+            h1st::node_input ni(&node, "");
+
+            FAIL() << "node_input constructor did not throw any exception!";
+        }
+        catch (
+            const h1st::empty_input_value_exception& ex
+        )
+        {
+            const std::string* aname;
+            aname = boost::get_error_info<h1st::argument_name>(ex);
+
+            ASSERT_NE((void*)0, aname);
+            ASSERT_STREQ("file", aname->c_str());
+        }
+        catch (...)
+        {
+            FAIL() << "Unexpected exception thrown by node_input constructor!";
+        }
+    }
+    catch(
+        ...
+    )
+    {
+        FAIL() << "hist_node constructor threw an exception!";
+    }
+}
 
 }
